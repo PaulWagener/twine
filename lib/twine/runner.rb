@@ -3,7 +3,7 @@ require 'tmpdir'
 Twine::Plugin.new # Initialize plugins first in Runner.
 
 module Twine
-  VALID_COMMANDS = ['generate-string-file', 'generate-all-string-files', 'consume-string-file', 'consume-all-string-files', 'generate-loc-drop', 'consume-loc-drop', 'generate-report']
+  VALID_COMMANDS = ['generate-string-file', 'generate-all-string-files', 'generate-string-file-with-intermediate', 'consume-string-file', 'consume-all-string-files', 'generate-loc-drop', 'consume-loc-drop', 'generate-report']
 
   class Runner
     def initialize(args)
@@ -40,6 +40,8 @@ module Twine
         generate_string_file
       when 'generate-all-string-files'
         generate_all_string_files
+      when 'generate-string-file-with-intermediate'
+        generate_string_file_with_intermediate
       when 'consume-string-file'
         consume_string_file
       when 'consume-all-string-files'
@@ -78,6 +80,33 @@ module Twine
       formatter = formatter_for_format(format)
 
       formatter.write_all_files(@options[:output_path])
+    end
+
+    def generate_string_file_with_intermediate
+      lang = nil
+      if @options[:languages]
+        lang = @options[:languages][0]
+      end
+
+      input =  @strings
+
+      @strings = StringsFile.new
+      read_write_string_file(@options[:intermediate_path], true, lang)
+
+      @strings.sections.each do |section|
+        section.rows.each do |row|
+          value_key = row.translations[lang]
+          if input.strings_map.include? value_key
+            row.translations[lang] = input.strings_map[value_key].translations[lang]
+          else
+            raise Twine::Error.new "Could not find key  #{value_key} in #{@options[:strings_file]}"
+          end
+
+        end
+      end
+
+
+      read_write_string_file(@options[:output_path], false, lang)
     end
 
     def consume_string_file

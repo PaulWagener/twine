@@ -156,6 +156,19 @@ module Twine
         else
           raise Twine::Error.new 'Not enough arguments.'
         end
+      when 'generate-string-file-with-intermediate'
+        @options[:consume_all] = true
+        if @args.length == 4
+          @options[:intermediate_path] = @args[2]
+          @options[:output_path] = @args[3]
+        elsif @args.length > 3
+          raise Twine::Error.new "Unknown argument: #{@args[4]}"
+        else
+          raise Twine::Error.new 'Not enough arguments.'
+        end
+        if @options[:languages] and @options[:languages].length > 1
+          raise Twine::Error.new 'Please only specify a single language for the generate-string-file command.'
+        end
       when 'generate-loc-drop'
         @options[:include_untranslated] = true
         if @args.length == 3
